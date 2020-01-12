@@ -29,11 +29,53 @@ import socketserver
 
 class MyWebServer(socketserver.BaseRequestHandler):
     
+    def response(self, response_status, file=None):
+        self.request.sendall(bytearray("HTTP/1.1 {}".format(response_status),'utf-8'))
+        self.request.sendall(bytearray("Content-Type: text/html;",'utf-8'))
+        self.request.sendall(bytearray("Connection: closed",'utf-8'))
+
+        # if file is requested
+        if file:
+            self.request.sendall(bytearray(file,'utf-8'))
+
+    def get_file(self, path):
+        # remove the leading slash
+        path = path[1:]
+
+        # if the path is not slash
+        if path
+            # check if file on server
+            try:
+                file = open('www'+path)
+            except:
+                return None
+            else:
+                return file
+        else:
+            file = open('www'+'index.html')
+            return path,file
+            
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        
+        request_method = self.data.splitlines()[0].decode().split(" ")[0]
 
+        if request_method == "GET":
+            path = self.data.splitlines()[0].decode().split(" ")[1]
+            file_path,file = self.get_file(path)
+
+            file = open(file_path).read()
+
+            self.request.sendall(bytearray("HTTP/1.1 200 OK",'utf-8'))
+            self.request.sendall(bytearray("Content-Type: text/html",'utf-8'))
+            self.request.sendall(bytearray("Connection: closed",'utf-8'))                
+            self.request.sendall(bytearray(file.read(),'utf-8'))
+
+        # Request method is not GET, return 405
+        else:
+            self.response("405 Method Not Allowed")
+            
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
