@@ -78,6 +78,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         elif path[-1] != "/":
             full_path = path + "/"
             self.response("301 Moved Permanently", redirect=full_path)
+            return
 
         return full_path
 
