@@ -52,16 +52,16 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def response(self, response_status, redirect=None, file_type="html", file=None):
         self.request.sendall(
-            bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8")
+            bytearray("HTTP/1.1 {}\r\n".format(response_status), "utf-8")
         )
         if redirect:
             self.request.sendall(
-                bytearray("Location: {}\n".format(redirect), "utf-8"))
+                bytearray("Location: {}\r\n".format(redirect), "utf-8"))
         else:
             self.request.sendall(
-                bytearray("Content-Type: text/{};\n".format(file_type), "utf-8")
+                bytearray("Content-Type: text/{};\r\n".format(file_type), "utf-8")
             )
-            self.request.sendall(bytearray("Connection: closed\n", "utf-8"))
+            self.request.sendall(bytearray("Connection: closed\r\n", "utf-8"))
 
         # if file is requested
         if file:
@@ -100,9 +100,9 @@ class MyWebServer(socketserver.BaseRequestHandler):
             print("full path in get", full_path)
             if self.file_exists(full_path):
                 redirect_location = (
-                    self.base_url + "/" + self.base_dir + path + "/" + "index.html"
+                    self.base_url + path + "/"
                 )
-                self.response("301 Moved Permanently", redirect=full_path)
+                self.response("301 Moved Permanently", redirect=redirect_location)
                 return
             print("not exist")
 
