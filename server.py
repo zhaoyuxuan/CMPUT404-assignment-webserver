@@ -1,5 +1,6 @@
 #  coding: utf-8
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 #
@@ -27,13 +28,37 @@ import socketserver
 # try: curl -v -X GET http://127.0.0.1:8080/
 
 
-class MyWebServer(socketserver.BaseRequestHandler):
+# Copyright 2020 Yuxuan Zhao
 
-    def response(self, response_status, file_type="html", file=None):
-        print(file_type)
-        self.request.sendall(bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8"))
-        self.request.sendall(bytearray("Content-Type: text/{};".format(file_type), "utf-8"))
-        self.request.sendall(bytearray("Connection: closed", "utf-8"))
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+
+#      http://www.apache.org/licenses/LICENSE-2.0
+
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+
+class MyWebServer(socketserver.BaseRequestHandler):
+    
+    def setup(self):
+        self.base_dir = "www"
+
+    def response(self, response_status, redirect=None, file_type="html", file=None):
+        self.request.sendall(
+            bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8")
+        )
+        self.request.sendall(
+            bytearray("Content-Type: text/{};\n".format(file_type), "utf-8")
+        )
+        self.request.sendall(bytearray("Connection: closed\n", "utf-8"))
+
+        if redirect:
+            self.request.sendall(bytearray("Location: {}\n".format(redirect), "utf-8"))
 
         # if file is requested
         if file:
@@ -47,22 +72,35 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def get_full_path(self, path):
 
         if path[-1] == "/":
-            full_path = "www" + path + "index.html"
+            full_path = self.base_dir + path + "index.html"
         elif "." in path:
-            full_path = "www"+path
+            full_path = self.base_dir + path
         elif path[-1] != "/":
             full_path = path + "/"
+            self.response("301 Moved Permanently", redirect=full_path)
 
         return full_path
-    
+
     def file_exists(self, path):
-        
-        try:
-            file = open(path)
-        except:
-            return False
-        else:
+
+        # if not os.path.exists(path): 
+        #     return False
+        if os.path.samefile(self.base_dir, path):
             return True
+
+        for root, dirs, files in os.walk(self.base_dir):
+            for file in files:
+                print(file,root,path)
+                if os.path.samefile(os.path.join(root, file),path):
+                    print("file", os.path.join(root, file))
+                    return True
+
+            for directory in dirs:
+                print(file,root,path)
+                if os.path.samefile(os.path.join(root, directory),path):
+                    print("dir", os.path.join(root, directory))
+                    return True
+        return False
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
