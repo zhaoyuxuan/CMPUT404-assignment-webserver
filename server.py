@@ -31,7 +31,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def response(self, response_status, file_type="html", file=None):
         print(file_type)
-        self.request.sendall(bytearray("HTTP/1.1 {}".format(response_status), "utf-8"))
+        self.request.sendall(bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8"))
         self.request.sendall(bytearray("Content-Type: text/{};".format(file_type), "utf-8"))
         self.request.sendall(bytearray("Connection: closed", "utf-8"))
 
