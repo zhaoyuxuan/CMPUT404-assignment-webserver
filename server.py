@@ -55,7 +55,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
             bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8")
         )
         if redirect:
-            self.request.sendall(bytearray("Location: {}\n".format(redirect), "utf-8"))
+            self.request.sendall(
+                bytearray("Location: {}\n".format(redirect), "utf-8"))
         else:
             self.request.sendall(
                 bytearray("Content-Type: text/{};\n".format(file_type), "utf-8")
