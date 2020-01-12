@@ -44,21 +44,23 @@ import os
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-    
     def setup(self):
         self.base_dir = "www"
+        self.base_url = "http://{0}:{1}".format(
+            self.server.server_address[0], self.server.server_address[1]
+        )
 
     def response(self, response_status, redirect=None, file_type="html", file=None):
         self.request.sendall(
             bytearray("HTTP/1.1 {}\n".format(response_status), "utf-8")
         )
-        self.request.sendall(
-            bytearray("Content-Type: text/{};\n".format(file_type), "utf-8")
-        )
-        self.request.sendall(bytearray("Connection: closed\n", "utf-8"))
-
         if redirect:
             self.request.sendall(bytearray("Location: {}\n".format(redirect), "utf-8"))
+        else:
+            self.request.sendall(
+                bytearray("Content-Type: text/{};\n".format(file_type), "utf-8")
+            )
+            self.request.sendall(bytearray("Connection: closed\n", "utf-8"))
 
         # if file is requested
         if file:
@@ -71,22 +73,18 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def file_exists(self, path):
 
-        if not os.path.exists(path): 
+        if not os.path.exists(path):
             return False
         if os.path.samefile(self.base_dir, path):
             return True
 
         for root, dirs, files in os.walk(self.base_dir):
             for file in files:
-                print(file,root,path)
-                if os.path.samefile(os.path.join(root, file),path):
-                    print("file", os.path.join(root, file))
+                if os.path.samefile(os.path.join(root, file), path):
                     return True
 
             for directory in dirs:
-                print(file,root,path)
-                if os.path.samefile(os.path.join(root, directory),path):
-                    print("dir", os.path.join(root, directory))
+                if os.path.samefile(os.path.join(root, directory), path):
                     return True
         return False
 
@@ -97,10 +95,15 @@ class MyWebServer(socketserver.BaseRequestHandler):
         elif "." in path:
             full_path = self.base_dir + path
         elif path[-1] != "/":
-            full_path = path + "/"
+            full_path = self.base_dir + path + "/" + "index.html"
+            print("full path in get", full_path)
             if self.file_exists(full_path):
+                redirect_location = (
+                    self.base_url + "/" + self.base_dir + path + "/" + "index.html"
+                )
                 self.response("301 Moved Permanently", redirect=full_path)
                 return
+            print("not exist")
 
         return full_path
 
@@ -111,14 +114,16 @@ class MyWebServer(socketserver.BaseRequestHandler):
         request_method = self.data.splitlines()[0].decode().split(" ")[0]
         if request_method == "GET":
             path = self.data.splitlines()[0].decode().split(" ")[1]
+            print("original", path)
             file_path = self.get_full_path(path)
-
-            if self.file_exists(file_path):
-                file = open(file_path).read()
-                file_type = self.get_file_extension(path)
-                self.response("200 OK", file_type=file_type, file=file)
-            else:
-                self.response("404 Not Found")
+            print("after", file_path)
+            if file_path:
+                if self.file_exists(file_path):
+                    file = open(file_path).read()
+                    file_type = self.get_file_extension(path)
+                    self.response("200 OK", file_type=file_type, file=file)
+                else:
+                    self.response("404 Not Found")
 
         # Request method is not GET, return 405
         else:
