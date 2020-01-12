@@ -69,23 +69,10 @@ class MyWebServer(socketserver.BaseRequestHandler):
             return path.split(".")[1]
         return "html"
 
-    def get_full_path(self, path):
-
-        if path[-1] == "/":
-            full_path = self.base_dir + path + "index.html"
-        elif "." in path:
-            full_path = self.base_dir + path
-        elif path[-1] != "/":
-            full_path = path + "/"
-            self.response("301 Moved Permanently", redirect=full_path)
-            return
-
-        return full_path
-
     def file_exists(self, path):
 
-        # if not os.path.exists(path): 
-        #     return False
+        if not os.path.exists(path): 
+            return False
         if os.path.samefile(self.base_dir, path):
             return True
 
@@ -102,6 +89,20 @@ class MyWebServer(socketserver.BaseRequestHandler):
                     print("dir", os.path.join(root, directory))
                     return True
         return False
+
+    def get_full_path(self, path):
+
+        if path[-1] == "/":
+            full_path = self.base_dir + path + "index.html"
+        elif "." in path:
+            full_path = self.base_dir + path
+        elif path[-1] != "/":
+            full_path = path + "/"
+            if self.file_exists(full_path):
+                self.response("301 Moved Permanently", redirect=full_path)
+                return
+
+        return full_path
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
