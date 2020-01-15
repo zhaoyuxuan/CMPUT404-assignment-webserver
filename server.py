@@ -61,7 +61,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.request.sendall(
                 bytearray("Content-Type: text/{};\r\n".format(file_type), "utf-8")
             )
-            self.request.sendall(bytearray("Connection: closed\r\n", "utf-8"))
+            self.request.sendall(bytearray("Connection: closed\r\n\r\n", "utf-8"))
 
         # if file is requested
         if file:
@@ -115,12 +115,10 @@ class MyWebServer(socketserver.BaseRequestHandler):
         request_method = self.data.splitlines()[0].decode().split(" ")[0]
         if request_method == "GET":
             path = self.data.splitlines()[0].decode().split(" ")[1]
-            print("original", path)
             file_path = self.get_full_path(path)
-            print("after", file_path)
             if file_path:
                 if self.file_exists(file_path):
-                    file = open(file_path).read()
+                    file = open(file_path, "r").read()
                     file_type = self.get_file_extension(path)
                     self.response("200 OK", file_type=file_type, file=file)
                 else:
