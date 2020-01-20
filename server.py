@@ -66,7 +66,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.request.sendall(
                 bytearray("Content-Type: text/{};\r\n".format(file_type), "utf-8")
             )
-            self.request.sendall(bytearray("Content-Length: {}\r\n".format(content_length), "utf-8"))
+            self.request.sendall(bytearray("Content-Length: {}\r\n".format(str(content_length)), "utf-8"))
             self.request.sendall(bytearray("Connection: closed\r\n\r\n", "utf-8"))
 
         # if file is requested
